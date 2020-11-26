@@ -1,6 +1,6 @@
 
 # Step 1 #
-- Create Profile Firebase
+- Create Project Firebase
 ## Config Project Setting ##
 - Change Location -> Default GCP resource location  Not yet selected : asia-east2
 - Change Supoort Email : xxxx@mail.com
