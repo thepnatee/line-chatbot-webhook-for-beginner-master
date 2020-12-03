@@ -9,7 +9,7 @@
 
 # Step 2 #
 - Create New Floder : {NAME}_LAB
-- Clone Source : git clone https://github.com/thepnatee/line-chatbot-webhook-for-beginner-master.git ChatBotLAB101
+- Clone Source : 'git clone https://github.com/thepnatee/line-chatbot-webhook-for-beginner-master.git ChatBotLAB101'
 - cd ChatBotLAB101/functions/
 - sudo npm install
 - npm install -g firebase-tools
