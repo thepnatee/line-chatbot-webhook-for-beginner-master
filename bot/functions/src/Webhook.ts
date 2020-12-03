@@ -14,7 +14,7 @@ const token = 'Bearer xxxxxxxxxx'
 const lineNotify = require('line-notify-nodejs')('zzzzzzzzzz');
 
 // config DIALOGFLOW ID
-// https://dialogflow.cloud.google.com/v1/integrations/line/webhook/2c84eaa6-e092-4e25-bbb8-3424d805a66f
+// https://dialogflow.cloud.google.com/v1/integrations/line/webhook/{dialogflowid}
 const dialogflowid = 'xxxxxxxx';
 
 
