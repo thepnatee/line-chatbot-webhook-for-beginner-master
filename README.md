@@ -6,6 +6,7 @@
 - Change Supoort Email : xxxx@mail.com
 - Upgrad Plan Project Spark to Blaze (เพื่อใช้ Cloud Function ต้องผูกบัตร)
 - Create Database -> Cloud Firestore
+- Create Realtime Database (ต้องเอา Database URL)
 
 # Step 2 #
 - Create New Floder : {NAME}_LAB
