@@ -15,7 +15,7 @@ const lineNotify = require('line-notify-nodejs')('zzzzzzzzzz');
 
 // config DIALOGFLOW ID
 // https://dialogflow.cloud.google.com/v1/integrations/line/webhook/2c84eaa6-e092-4e25-bbb8-3424d805a66f
-const dialogflowid = 'wwwwwwwwwwww';
+const dialogflowid = 'xxxxxxxx';
 
 
 const LINE_MESSAGING_API = 'https://api.line.me/v2/bot/message';
@@ -47,7 +47,7 @@ exports.Chatbot = onRequest(async (req, res) => {
                         case 'text':
                                 if (message === '#Demo') {
                                         // Demo Reply Message
-                                        reply(req.body);
+                                        reply(req);
                                 } else if (message === '#profile') {
                                         // Demo Getting Profile
                                         profile(res, req);
@@ -63,22 +63,22 @@ exports.Chatbot = onRequest(async (req, res) => {
                                 }
                                 break;
                         case 'image':
-                                reply(req.body);
+                                reply(req);
                                 break;
                         case 'sticker':
                                 replySticker(req);
                                 break;
                         case 'video':
-                                reply(req.body);
+                                reply(req);
                                 break;
                         case 'audio':
-                                reply(req.body);
+                                reply(req);
                                 break;
                         case 'file':
-                                reply(req.body);
+                                reply(req);
                                 break;
                         case 'location':
-                                reply(req.body);
+                                reply(req);
                                 break;
                         default:
                                 break;
@@ -100,7 +100,7 @@ exports.Chatbot = onRequest(async (req, res) => {
                 //           }
                 //         ]
                 //}
-                reply(req.body);
+                reply(req);
         } else if (event.type === "unfollow") {
                 // {
                 //         "destination": "xxxxxxxxxx", // Bot ID
@@ -254,7 +254,7 @@ exports.Chatbot = onRequest(async (req, res) => {
                 //               }
                 //             }
 
-                reply(req.body);
+                reply(req);
         } else if (event.type === "videoPlayComplete") {
                 // {
                 //         "destination": "xxxxxxxxxx",
@@ -278,7 +278,7 @@ exports.Chatbot = onRequest(async (req, res) => {
                 // videoPlayComplete.trackingId
                 // ID used to identify a video. Returns the same value as the trackingId assigned to the video message.
                 // trackingId มาจก Message Event Video
-                reply(req.body);
+                reply(req);
         }
 
         addData(res, req);
@@ -378,22 +378,22 @@ const replyGroup = (res, req) => {
                 return Promise.reject(error);
         });
 }
-const reply = (bodyResponse) => {
-        return request({
-                method: `POST`,
-                uri: `${LINE_MESSAGING_API}/reply`,
-                headers: LINE_HEADER,
-                body: JSON.stringify({
-                  replyToken: bodyResponse.events[0].replyToken,
-                  messages: [
-                    {
-                      type: `text`,
-                      text: bodyResponse
-                    }
-                      ]
-                })
-              });
-}
+const reply = req => {
+        return request.post({
+          uri: `${LINE_MESSAGING_API}/reply`,
+          headers: LINE_HEADER,
+          body: JSON.stringify({
+            replyToken: req.body.events[0].replyToken,
+            messages: [
+              {
+                type: "text",
+                text: JSON.stringify(req.body)
+              }
+            ]
+          })
+        });
+      };
+      
 const replyFlex = (res, req) => {
         var payload = [{
                 "type": "flex",
