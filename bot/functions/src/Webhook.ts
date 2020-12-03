@@ -7,21 +7,15 @@ const REGION: any = process.env.FUNCTION_REGION || "asia-east2"
 export const onCall = functions.region(REGION).https.onCall
 export const onRequest = functions.region(REGION).runWith({ timeoutSeconds: 300, memory: '1GB' }).https.onRequest
 
-var today = new Date();
-var day = today.getDate()
-var month = today.getMonth() + 1
-var year = today.getFullYear();
-var date = year + '-' + month + '-' + day
-var time = today.getHours() + ':' + today.getMinutes() + ':' + today.getSeconds()
-
 // config LINE TOKEN MESSAGING API
-const token = 'wwwwwwwwww'
+const token = 'Bearer xxxxxxxxxx'
 
 // config LINE TOKEN NOTIFY
 const lineNotify = require('line-notify-nodejs')('zzzzzzzzzz');
 
 // config DIALOGFLOW ID
-const dialogflowid = 'xxxxxxxxxx';
+// https://dialogflow.cloud.google.com/v1/integrations/line/webhook/2c84eaa6-e092-4e25-bbb8-3424d805a66f
+const dialogflowid = 'wwwwwwwwwwww';
 
 
 const LINE_MESSAGING_API = 'https://api.line.me/v2/bot/message';
@@ -53,8 +47,8 @@ exports.Chatbot = onRequest(async (req, res) => {
                         case 'text':
                                 if (message === '#Demo') {
                                         // Demo Reply Message
-                                        reply(res, req);
-                                } else if (message === '#profiel') {
+                                        reply(req.body);
+                                } else if (message === '#profile') {
                                         // Demo Getting Profile
                                         profile(res, req);
                                 } else if (message === '#flex') {
@@ -69,22 +63,22 @@ exports.Chatbot = onRequest(async (req, res) => {
                                 }
                                 break;
                         case 'image':
-                                reply(res, req);
+                                reply(req.body);
                                 break;
                         case 'sticker':
                                 replySticker(req);
                                 break;
                         case 'video':
-                                reply(res, req);
+                                reply(req.body);
                                 break;
                         case 'audio':
-                                reply(res, req);
+                                reply(req.body);
                                 break;
                         case 'file':
-                                reply(res, req);
+                                reply(req.body);
                                 break;
                         case 'location':
-                                reply(res, req);
+                                reply(req.body);
                                 break;
                         default:
                                 break;
@@ -106,7 +100,7 @@ exports.Chatbot = onRequest(async (req, res) => {
                 //           }
                 //         ]
                 //}
-                reply(res, req);
+                reply(req.body);
         } else if (event.type === "unfollow") {
                 // {
                 //         "destination": "xxxxxxxxxx", // Bot ID
@@ -260,7 +254,7 @@ exports.Chatbot = onRequest(async (req, res) => {
                 //               }
                 //             }
 
-                reply(res, req);
+                reply(req.body);
         } else if (event.type === "videoPlayComplete") {
                 // {
                 //         "destination": "xxxxxxxxxx",
@@ -284,7 +278,7 @@ exports.Chatbot = onRequest(async (req, res) => {
                 // videoPlayComplete.trackingId
                 // ID used to identify a video. Returns the same value as the trackingId assigned to the video message.
                 // trackingId มาจก Message Event Video
-                reply(res, req);
+                reply(req.body);
         }
 
         addData(res, req);
@@ -297,20 +291,23 @@ const addData = (res, req) => {
         const corsFn = cors()
         corsFn(req, res, async () => {
                 try {
+                        var datetime = new Date().toLocaleString("th-TH", {timeZone: "Asia/Bangkok", hour12: false});
+                        var datefull = datetime.split(',')
+                        var day = datefull[0].split('/')
+                        var dd =  day[0]
+                        var mm = day[1]
+                        var yyyy = day[2]
+                        var date = "'" + day[2] + '-' + day[1] + '-' + day[0] + "'"
+                        var time = "'" + datefull[1] + "'"
                         const result = await db.collection("chatBot").add({
                                 event: req.body.events[0],
                                 messageType: req.body.events[0].type,
                                 recordStatus: 'N',
                                 createDate: date,
-                                createDay: day,
-                                createMonth: month,
-                                createYear: year,
-                                createTime: time,
-                                lastDate: date,
-                                lastDay: day,
-                                lastMonth: month,
-                                lastYear: year,
-                                lastTime: time
+                                createDay: dd,
+                                createMonth: mm,
+                                createYear: yyyy,
+                                createTime: time
                         })
 
                         await return_data(res, result)
@@ -381,20 +378,21 @@ const replyGroup = (res, req) => {
                 return Promise.reject(error);
         });
 }
-const reply = (res, req) => {
+const reply = (bodyResponse) => {
         return request({
                 method: `POST`,
                 uri: `${LINE_MESSAGING_API}/reply`,
                 headers: LINE_HEADER,
                 body: JSON.stringify({
-                        replyToken: req.body.events[0].replyToken,
-                        message: req.body
+                  replyToken: bodyResponse.events[0].replyToken,
+                  messages: [
+                    {
+                      type: `text`,
+                      text: bodyResponse
+                    }
+                      ]
                 })
-        }).then(() => {
-                return res.status(200).send(`Done`);
-        }).catch((error) => {
-                return Promise.reject(error);
-        });
+              });
 }
 const replyFlex = (res, req) => {
         var payload = [{
@@ -480,11 +478,23 @@ const replySticker = req => {
 const profile = (res, req) => {
         return request({
                 method: `GET`,
-                uri: `${LINE_MESSAGING_API_PROFILE}/` + req.query.userId,
+                uri: `${LINE_MESSAGING_API_PROFILE}/` + req.body.events[0].source.userId,
                 headers: LINE_HEADER,
                 json: true
-        }).then((result) => {
-                return_data(res, result)
+        }).then((response) => {
+                request.post({
+                        uri: `${LINE_MESSAGING_API}/reply`,
+                        headers: LINE_HEADER,
+                        body: JSON.stringify({
+                                replyToken: req.body.events[0].replyToken,
+                                messages: [
+                                        {
+                                                type: `text`,
+                                                text: response
+                                        }
+                                ]
+                        })
+                });
         }).catch((error) => {
                 return Promise.reject(error);
         });
