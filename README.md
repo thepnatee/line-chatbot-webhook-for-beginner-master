@@ -4,7 +4,7 @@
 ## Config Project Setting ##
 - Change Location -> Default GCP resource location  Not yet selected ::> asia-east2
 - Change Supoort Email : xxxx@mail.com
-- Upgrad Plan Project Spark to Blaze (เพื่อใช้ Cloud Function ต้องผูกบัตร)
+- Upgrad Plan Project Spark to Blaze (ใช้ Cloud Function ต้องผูกบัตร. *** หรือ หนีไป Emulator ได้เลย)
 - Create Database -> Cloud Firestore
 - Create Realtime Database (ต้องเอา Database URL)
 
