@@ -16,11 +16,11 @@
 - npm install -g firebase-tools
 - npm install firebase-admin
 - firebase login
+## Firebase Setting ##
+- ต้องมั่นใจว่า Firebase Login แล้วนะ
 - firebase init functions (Enter อย่างเดียวนะไม่ต้องแก้)
-## Install Function ##
-- cd /project/function/
-- npm install
-### Firebase Setting ###
+- Choice : TypeScript
+## Firebase Setting ##
 - Service Accounts -> Firebase Admin SDK -> Choice Node JS. -> Copy text to ../function/src/store.ts
 - Generate new private key -> copy text to ../function/config.json
 - Edit Project ID From Firebase -> .firebaserc (แก้ project id จาก project setting)
@@ -28,7 +28,7 @@
 
 ### Go to file Webhook.ts ##
 - แก้ token = xxxxxxx. ที่ได้จาก Messaging API IN LINE Developer Console
-#### Option ####
+### Option ###
 - เชื่อมต่อ Dialogflow แก้ dialogflowid = xxxxxxx
 - เชื่อมต่อ LINE Notify แก้ lineNotify = xxxxxx
 
