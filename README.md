@@ -27,6 +27,8 @@
 - firebase deploy --only functions
 
 ### Go to file Webhook.ts ##
-
-
+- แก้ token = xxxxxxx. ที่ได้จาก Messaging API IN LINE Developer Console
+#### Option ####
+- เชื่อมต่อ Dialogflow แก้ dialogflowid = xxxxxxx
+- เชื่อมต่อ LINE Notify แก้ lineNotify = xxxxxx
 
