@@ -6,7 +6,7 @@ import * as cors from 'cors'
 const REGION: any = process.env.FUNCTION_REGION || "asia-east2"
 export const onCall = functions.region(REGION).https.onCall
 export const onRequest = functions.region(REGION).runWith({ timeoutSeconds: 300, memory: '1GB' }).https.onRequest
-
+// Create By Thepnatee Phojan
 // config LINE TOKEN MESSAGING API
 // 1. https://developers.line.biz/console/
 // 2. LINE Messaging API -> เมนู Messaging API -> Channel Access Token Copy to Replace xxxxxxxxxx

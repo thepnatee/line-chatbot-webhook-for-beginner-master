@@ -35,3 +35,5 @@
 - เชื่อมต่อ Dialogflow แก้ dialogflowid = yyyyyyyyyyyy
 - เชื่อมต่อ LINE Notify แก้ lineNotify = zzzzzzzzzz
 
+@thepnatee phojan
+@thepnatee.p@gmail.com
