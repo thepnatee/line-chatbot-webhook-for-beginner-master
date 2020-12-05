@@ -8,14 +8,26 @@ export const onCall = functions.region(REGION).https.onCall
 export const onRequest = functions.region(REGION).runWith({ timeoutSeconds: 300, memory: '1GB' }).https.onRequest
 
 // config LINE TOKEN MESSAGING API
+// 1. https://developers.line.biz/console/
+// 2. LINE Messaging API -> เมนู Messaging API -> Channel Access Token Copy to Replace xxxxxxxxxx
 const token = 'Bearer xxxxxxxxxx'
 
+
+/////////////// Option ////////////////////
+
 // config LINE TOKEN NOTIFY
+// https://notify-bot.line.me/en/ -> my page -> Generate Token  Copy to Replace  zzzzzzzzzz
+// ** npm install line-notify-nodejs
+// กรณี ต้องการนำไปเป็นการแจ้งเตือนต่างๆ โดยสามารถเอา function ไปใช้ใน Ticker ต่างๆ 
+
 const lineNotify = require('line-notify-nodejs')('zzzzzzzzzz');
 
 // config DIALOGFLOW ID
-// https://dialogflow.cloud.google.com/v1/integrations/line/webhook/{dialogflowid}
-const dialogflowid = 'xxxxxxxx';
+// https://dialogflow.cloud.google.com/v1/integrations/line/webhook/{dialogflowid} Copy dialogflowid to Replace  yyyyyyyyyyyy
+// สำหรับ foward Text ไปใช้ Dialogflow
+const dialogflowid = 'yyyyyyyyyyyy';
+
+///////////////////////////////////////////
 
 
 const LINE_MESSAGING_API = 'https://api.line.me/v2/bot/message';
@@ -47,38 +59,47 @@ exports.Chatbot = onRequest(async (req, res) => {
                         case 'text':
                                 if (message === '#Demo') {
                                         // Demo Reply Message
-                                        reply(req);
+                                        // แสกง Event ที่ส่งมาทั้งหมด
+                                        replyRaw(req);
                                 } else if (message === '#profile') {
                                         // Demo Getting Profile
-                                        profile(res, req);
+                                        // แสดงข้อมูล Profile ตัวเองที่ได้จาก LINE
+                                        profile(req);
                                 } else if (message === '#flex') {
                                         // Demo replyFlex
+                                        // https://developers.line.biz/flex-simulator/
                                         replyFlex(res, req);
                                 } else if (message === '#push') {
                                         // Demo Test Push Message
+                                        // ทดสอบการใช้ PUSH Message
                                         push(res, req);
+                                } else if (message === 'สวัสดี') {
+                                        // Demo Test reply Message
+                                        // ทดสอบการใช้ Reply
+                                        reply(req);
                                 } else {
                                         // Demo Dialogflow
+                                        // นอกเหนือจากข้อมูลที่ไม่เข้าเงื่อนไข ให้ใช้ Dialogflow
                                         postToDialogflow(req);
                                 }
                                 break;
                         case 'image':
-                                reply(req);
+                                replyRaw(req);
                                 break;
                         case 'sticker':
-                                replySticker(req);
+                                replyRaw(req);
                                 break;
                         case 'video':
-                                reply(req);
+                                replyRaw(req);
                                 break;
                         case 'audio':
-                                reply(req);
+                                replyRaw(req);
                                 break;
                         case 'file':
-                                reply(req);
+                                replyRaw(req);
                                 break;
                         case 'location':
-                                reply(req);
+                                replyRaw(req);
                                 break;
                         default:
                                 break;
@@ -100,7 +121,7 @@ exports.Chatbot = onRequest(async (req, res) => {
                 //           }
                 //         ]
                 //}
-                reply(req);
+                replyRaw(req);
         } else if (event.type === "unfollow") {
                 // {
                 //         "destination": "xxxxxxxxxx", // Bot ID
@@ -254,7 +275,7 @@ exports.Chatbot = onRequest(async (req, res) => {
                 //               }
                 //             }
 
-                reply(req);
+                replyRaw(req);
         } else if (event.type === "videoPlayComplete") {
                 // {
                 //         "destination": "xxxxxxxxxx",
@@ -278,9 +299,11 @@ exports.Chatbot = onRequest(async (req, res) => {
                 // videoPlayComplete.trackingId
                 // ID used to identify a video. Returns the same value as the trackingId assigned to the video message.
                 // trackingId มาจก Message Event Video
-                reply(req);
+                replyRaw(req);
         }
 
+
+        // เก็บข้อมูลเข้า Firestore
         addData(res, req);
 
 });
@@ -291,10 +314,10 @@ const addData = (res, req) => {
         const corsFn = cors()
         corsFn(req, res, async () => {
                 try {
-                        var datetime = new Date().toLocaleString("th-TH", {timeZone: "Asia/Bangkok", hour12: false});
+                        var datetime = new Date().toLocaleString("th-TH", { timeZone: "Asia/Bangkok", hour12: false });
                         var datefull = datetime.split(',')
                         var day = datefull[0].split('/')
-                        var dd =  day[0]
+                        var dd = day[0]
                         var mm = day[1]
                         var yyyy = day[2]
                         var date = "'" + day[2] + '-' + day[1] + '-' + day[0] + "'"
@@ -310,7 +333,8 @@ const addData = (res, req) => {
                                 createTime: time
                         })
 
-                        await return_data(res, result)
+                        res.set("Access-Control-Allow-Origin", "*")
+                        res.status(200).send(result).end()
                 } catch (err) {
                         console.log(err)
                         res.status(500).end()
@@ -337,8 +361,8 @@ const push = (res, req) => {
                         to: req.body.events[0].source.userId,
                         messages: [
                                 {
-                                        type: `text`,
-                                        text: req.body
+                                        type: "text",
+                                        text: JSON.stringify(req.body)
                                 }
                         ]
                 })
@@ -355,7 +379,12 @@ const pushGroup = (res, req) => {
                 headers: LINE_HEADER,
                 body: JSON.stringify({
                         replyToken: req.body.events[0].source.groupId,
-                        message: req.body
+                        messages: [
+                                {
+                                        type: "text",
+                                        text: JSON.stringify(req.body)
+                                }
+                        ]
                 })
         }).then(() => {
                 return res.status(200).send(`Done`);
@@ -370,7 +399,12 @@ const replyGroup = (res, req) => {
                 headers: LINE_HEADER,
                 body: JSON.stringify({
                         replyToken: req.body.events[0].replyToken,
-                        message: req.body
+                        messages: [
+                                {
+                                        type: "text",
+                                        text: JSON.stringify(req.body)
+                                }
+                        ]
                 })
         }).then(() => {
                 return res.status(200).send(`Done`);
@@ -380,46 +414,96 @@ const replyGroup = (res, req) => {
 }
 const reply = req => {
         return request.post({
-          uri: `${LINE_MESSAGING_API}/reply`,
-          headers: LINE_HEADER,
-          body: JSON.stringify({
-            replyToken: req.body.events[0].replyToken,
-            messages: [
-              {
-                type: "text",
-                text: JSON.stringify(req.body)
-              }
-            ]
-          })
+                uri: `${LINE_MESSAGING_API}/reply`,
+                headers: LINE_HEADER,
+                body: JSON.stringify({
+                        replyToken: req.body.events[0].replyToken,
+                        messages: [
+                                {
+                                        "type": "text",
+                                        "text": "Hello"
+                                }
+                        ]
+                })
         });
-      };
-      
+};
+
+
+const replyRaw = req => {
+        return request.post({
+                uri: `${LINE_MESSAGING_API}/reply`,
+                headers: LINE_HEADER,
+                body: JSON.stringify({
+                        replyToken: req.body.events[0].replyToken,
+                        messages: [
+                                {
+                                        type: "text",
+                                        text: JSON.stringify(req.body)
+                                }
+                        ]
+                })
+        });
+};
+
 const replyFlex = (res, req) => {
+        // https://developers.line.biz/flex-simulator/?
         var payload = [{
                 "type": "flex",
                 "altText": "ซองกฐิน",
                 "contents":
                 {
                         "type": "bubble",
-                        "direction": "ltr",
+                        "size": "mega",
                         "header": {
                                 "type": "box",
                                 "layout": "vertical",
                                 "contents": [
                                         {
-                                                "type": "text",
-                                                "text": "Header",
-                                                "align": "center",
-                                                "contents": []
+                                                "type": "box",
+                                                "layout": "vertical",
+                                                "contents": [
+                                                        {
+                                                                "type": "text",
+                                                                "text": "FROM",
+                                                                "color": "#ffffff66",
+                                                                "size": "sm"
+                                                        },
+                                                        {
+                                                                "type": "text",
+                                                                "text": "Akihabara",
+                                                                "color": "#ffffff",
+                                                                "size": "xl",
+                                                                "flex": 4,
+                                                                "weight": "bold"
+                                                        }
+                                                ]
+                                        },
+                                        {
+                                                "type": "box",
+                                                "layout": "vertical",
+                                                "contents": [
+                                                        {
+                                                                "type": "text",
+                                                                "text": "TO",
+                                                                "color": "#ffffff66",
+                                                                "size": "sm"
+                                                        },
+                                                        {
+                                                                "type": "text",
+                                                                "text": "Shinjuku",
+                                                                "color": "#ffffff",
+                                                                "size": "xl",
+                                                                "flex": 4,
+                                                                "weight": "bold"
+                                                        }
+                                                ]
                                         }
-                                ]
-                        },
-                        "hero": {
-                                "type": "image",
-                                "url": "https://vos.line-scdn.net/bot-designer-template-images/bot-designer-icon.png",
-                                "size": "full",
-                                "aspectRatio": "1.51:1",
-                                "aspectMode": "fit"
+                                ],
+                                "paddingAll": "20px",
+                                "backgroundColor": "#0367D3",
+                                "spacing": "md",
+                                "height": "154px",
+                                "paddingTop": "22px"
                         },
                         "body": {
                                 "type": "box",
@@ -427,23 +511,255 @@ const replyFlex = (res, req) => {
                                 "contents": [
                                         {
                                                 "type": "text",
-                                                "text": "Body",
-                                                "align": "center",
-                                                "contents": []
-                                        }
-                                ]
-                        },
-                        "footer": {
-                                "type": "box",
-                                "layout": "horizontal",
-                                "contents": [
+                                                "text": "Total: 1 hour",
+                                                "color": "#b7b7b7",
+                                                "size": "xs"
+                                        },
                                         {
-                                                "type": "button",
-                                                "action": {
-                                                        "type": "uri",
-                                                        "label": "Button",
-                                                        "uri": "https://linecorp.com"
-                                                }
+                                                "type": "box",
+                                                "layout": "horizontal",
+                                                "contents": [
+                                                        {
+                                                                "type": "text",
+                                                                "text": "20:30",
+                                                                "size": "sm",
+                                                                "gravity": "center"
+                                                        },
+                                                        {
+                                                                "type": "box",
+                                                                "layout": "vertical",
+                                                                "contents": [
+                                                                        {
+                                                                                "type": "filler"
+                                                                        },
+                                                                        {
+                                                                                "type": "box",
+                                                                                "layout": "vertical",
+                                                                                "contents": [],
+                                                                                "cornerRadius": "30px",
+                                                                                "height": "12px",
+                                                                                "width": "12px",
+                                                                                "borderColor": "#EF454D",
+                                                                                "borderWidth": "2px"
+                                                                        },
+                                                                        {
+                                                                                "type": "filler"
+                                                                        }
+                                                                ],
+                                                                "flex": 0
+                                                        },
+                                                        {
+                                                                "type": "text",
+                                                                "text": "Akihabara",
+                                                                "gravity": "center",
+                                                                "flex": 4,
+                                                                "size": "sm"
+                                                        }
+                                                ],
+                                                "spacing": "lg",
+                                                "cornerRadius": "30px",
+                                                "margin": "xl"
+                                        },
+                                        {
+                                                "type": "box",
+                                                "layout": "horizontal",
+                                                "contents": [
+                                                        {
+                                                                "type": "box",
+                                                                "layout": "baseline",
+                                                                "contents": [
+                                                                        {
+                                                                                "type": "filler"
+                                                                        }
+                                                                ],
+                                                                "flex": 1
+                                                        },
+                                                        {
+                                                                "type": "box",
+                                                                "layout": "vertical",
+                                                                "contents": [
+                                                                        {
+                                                                                "type": "box",
+                                                                                "layout": "horizontal",
+                                                                                "contents": [
+                                                                                        {
+                                                                                                "type": "filler"
+                                                                                        },
+                                                                                        {
+                                                                                                "type": "box",
+                                                                                                "layout": "vertical",
+                                                                                                "contents": [],
+                                                                                                "width": "2px",
+                                                                                                "backgroundColor": "#B7B7B7"
+                                                                                        },
+                                                                                        {
+                                                                                                "type": "filler"
+                                                                                        }
+                                                                                ],
+                                                                                "flex": 1
+                                                                        }
+                                                                ],
+                                                                "width": "12px"
+                                                        },
+                                                        {
+                                                                "type": "text",
+                                                                "text": "Walk 4min",
+                                                                "gravity": "center",
+                                                                "flex": 4,
+                                                                "size": "xs",
+                                                                "color": "#8c8c8c"
+                                                        }
+                                                ],
+                                                "spacing": "lg",
+                                                "height": "64px"
+                                        },
+                                        {
+                                                "type": "box",
+                                                "layout": "horizontal",
+                                                "contents": [
+                                                        {
+                                                                "type": "box",
+                                                                "layout": "horizontal",
+                                                                "contents": [
+                                                                        {
+                                                                                "type": "text",
+                                                                                "text": "20:34",
+                                                                                "gravity": "center",
+                                                                                "size": "sm"
+                                                                        }
+                                                                ],
+                                                                "flex": 1
+                                                        },
+                                                        {
+                                                                "type": "box",
+                                                                "layout": "vertical",
+                                                                "contents": [
+                                                                        {
+                                                                                "type": "filler"
+                                                                        },
+                                                                        {
+                                                                                "type": "box",
+                                                                                "layout": "vertical",
+                                                                                "contents": [],
+                                                                                "cornerRadius": "30px",
+                                                                                "width": "12px",
+                                                                                "height": "12px",
+                                                                                "borderWidth": "2px",
+                                                                                "borderColor": "#6486E3"
+                                                                        },
+                                                                        {
+                                                                                "type": "filler"
+                                                                        }
+                                                                ],
+                                                                "flex": 0
+                                                        },
+                                                        {
+                                                                "type": "text",
+                                                                "text": "Ochanomizu",
+                                                                "gravity": "center",
+                                                                "flex": 4,
+                                                                "size": "sm"
+                                                        }
+                                                ],
+                                                "spacing": "lg",
+                                                "cornerRadius": "30px"
+                                        },
+                                        {
+                                                "type": "box",
+                                                "layout": "horizontal",
+                                                "contents": [
+                                                        {
+                                                                "type": "box",
+                                                                "layout": "baseline",
+                                                                "contents": [
+                                                                        {
+                                                                                "type": "filler"
+                                                                        }
+                                                                ],
+                                                                "flex": 1
+                                                        },
+                                                        {
+                                                                "type": "box",
+                                                                "layout": "vertical",
+                                                                "contents": [
+                                                                        {
+                                                                                "type": "box",
+                                                                                "layout": "horizontal",
+                                                                                "contents": [
+                                                                                        {
+                                                                                                "type": "filler"
+                                                                                        },
+                                                                                        {
+                                                                                                "type": "box",
+                                                                                                "layout": "vertical",
+                                                                                                "contents": [],
+                                                                                                "width": "2px",
+                                                                                                "backgroundColor": "#6486E3"
+                                                                                        },
+                                                                                        {
+                                                                                                "type": "filler"
+                                                                                        }
+                                                                                ],
+                                                                                "flex": 1
+                                                                        }
+                                                                ],
+                                                                "width": "12px"
+                                                        },
+                                                        {
+                                                                "type": "text",
+                                                                "text": "Metro 1hr",
+                                                                "gravity": "center",
+                                                                "flex": 4,
+                                                                "size": "xs",
+                                                                "color": "#8c8c8c"
+                                                        }
+                                                ],
+                                                "spacing": "lg",
+                                                "height": "64px"
+                                        },
+                                        {
+                                                "type": "box",
+                                                "layout": "horizontal",
+                                                "contents": [
+                                                        {
+                                                                "type": "text",
+                                                                "text": "20:40",
+                                                                "gravity": "center",
+                                                                "size": "sm"
+                                                        },
+                                                        {
+                                                                "type": "box",
+                                                                "layout": "vertical",
+                                                                "contents": [
+                                                                        {
+                                                                                "type": "filler"
+                                                                        },
+                                                                        {
+                                                                                "type": "box",
+                                                                                "layout": "vertical",
+                                                                                "contents": [],
+                                                                                "cornerRadius": "30px",
+                                                                                "width": "12px",
+                                                                                "height": "12px",
+                                                                                "borderColor": "#6486E3",
+                                                                                "borderWidth": "2px"
+                                                                        },
+                                                                        {
+                                                                                "type": "filler"
+                                                                        }
+                                                                ],
+                                                                "flex": 0
+                                                        },
+                                                        {
+                                                                "type": "text",
+                                                                "text": "Shinjuku",
+                                                                "gravity": "center",
+                                                                "flex": 4,
+                                                                "size": "sm"
+                                                        }
+                                                ],
+                                                "spacing": "lg",
+                                                "cornerRadius": "30px"
                                         }
                                 ]
                         }
@@ -458,31 +774,32 @@ const replyFlex = (res, req) => {
                 })
         });
 };
-const replySticker = req => {
-        return request.post({
-                uri: `${LINE_MESSAGING_API}/reply`,
-                headers: LINE_HEADER,
-                body: JSON.stringify({
-                        replyToken: req.body.events[0].replyToken,
-                        messages: [
-                                {
-                                        type: "sticker",
-                                        packageId: "11537",
-                                        stickerId: "52002738",
-                                }
-                        ]
-                })
-        });
-};
+// const replySticker = req => {
+//         // https://developers.line.biz/media/messaging-api/sticker_list.pdf
+//         return request.post({
+//                 uri: `${LINE_MESSAGING_API}/reply`,
+//                 headers: LINE_HEADER,
+//                 body: JSON.stringify({
+//                         replyToken: req.body.events[0].replyToken,
+//                         messages: [
+//                                 {
+//                                         type: "sticker",
+//                                         packageId: "11537",
+//                                         stickerId: "52002738",
+//                                 }
+//                         ]
+//                 })
+//         });
+// };
 
-const profile = (res, req) => {
+const profile = req => {
         return request({
                 method: `GET`,
                 uri: `${LINE_MESSAGING_API_PROFILE}/` + req.body.events[0].source.userId,
                 headers: LINE_HEADER,
                 json: true
-        }).then((response) => {
-                request.post({
+        }).then(async (response) => {
+                await request.post({
                         uri: `${LINE_MESSAGING_API}/reply`,
                         headers: LINE_HEADER,
                         body: JSON.stringify({
@@ -490,7 +807,7 @@ const profile = (res, req) => {
                                 messages: [
                                         {
                                                 type: `text`,
-                                                text: response
+                                                text: JSON.stringify(response)
                                         }
                                 ]
                         })
@@ -510,17 +827,11 @@ exports.line_notify = onRequest(async (req, res) => {
                         }).then(() => {
                                 console.log('send completed!');
                         });
-                        return_data(res, result)
+                        res.set("Access-Control-Allow-Origin", "*")
+                        res.status(200).send(result).end()
                 } catch (err) {
                         console.log('Error getting documents', err);
                         res.status(500).end()
                 }
         })
 })
-
-
-const return_data = async (res: any, data: any) => {
-        console.log(data)
-        res.set("Access-Control-Allow-Origin", "*")
-        res.status(200).send(data).end()
-}
