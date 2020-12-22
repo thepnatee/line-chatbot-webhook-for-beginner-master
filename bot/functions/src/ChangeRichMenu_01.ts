@@ -55,9 +55,15 @@ exports.Chatbot = onRequest(async (req, res) => {
                         // พิมพ์ #Richmenu2 เพื่อเปลี่ยน Richmenu 2
                         case 'text':
                                 if (message === '#Richmenu1') {
-                                        ChangeRichMnu(req, Richmenu1);
+                                        request.post({
+                                                uri: 'https://api.line.me/v2/bot/user/' + event.source.userId + '/richmenu/richmenu-' + Richmenu1,
+                                                headers: LINE_HEADER
+                                        });
                                 } else if (message === '#Richmenu2') {
-                                        ChangeRichMnu(req, Richmenu2);
+                                        request.post({
+                                                uri: 'https://api.line.me/v2/bot/user/' + event.source.userId + '/richmenu/richmenu-' + Richmenu2,
+                                                headers: LINE_HEADER
+                                        });
                                 } else {
                                         replyRaw(req);
                                 }
@@ -89,15 +95,12 @@ exports.Chatbot = onRequest(async (req, res) => {
 });
 
 const profile = req => {
-
-
         return request({
                 method: `GET`,
                 uri: `${LINE_MESSAGING_API_PROFILE}/` + req.body.events[0].source.userId,
                 headers: LINE_HEADER,
                 json: true
         }).then((response) => {
-                console.log('Profile : ', JSON.stringify(response))
                 // {
                 //         "userId": "Ua9980.......",
                 //         "displayName": "󠀠thepnatee",
@@ -105,26 +108,23 @@ const profile = req => {
                 //         "statusMessage": "find passion",
                 //         "language": "th"
                 //}
+                // Usecase ที่ถ้า LINE ตั้งค่าภาษาเป็น th จะเป็น Richmenu 1 ถ้าเป็น en หรืออื่นๆ เปลี่ยนเป็นอันที่ 2
                 if (response.language === 'th') {
-                        ChangeRichMnu(req, Richmenu1);
+                        request.post({
+                                uri: 'https://api.line.me/v2/bot/user/' + req.body.events[0].source.userId + '/richmenu/richmenu-' + Richmenu1,
+                                headers: LINE_HEADER
+                        });
                 } else {
-                        ChangeRichMnu(req, Richmenu2);
+                        request.post({
+                                uri: 'https://api.line.me/v2/bot/user/' + req.body.events[0].source.userId + '/richmenu/richmenu-' + Richmenu2,
+                                headers: LINE_HEADER
+                        });
                 }
 
         }).catch((error) => {
                 return Promise.reject(error);
         });
 }
-
-
-const ChangeRichMnu = (req, richId) => {
-        console.log('ChangeRichMnu : ', JSON.stringify(req))
-        return request.post({
-                uri: 'https://api.line.me/v2/bot/user/' + req.body.events[0].userId + '/richmenu/richmenu-' + richId,
-                headers: LINE_HEADER
-        });
-};
-
 
 
 const replyRaw = req => {
